@@ -76,6 +76,10 @@ networksendSpoof = hookfunction(modules.network.Send, function(self,eventname,..
     if eventname == "Character State Report" and getgenv().SpoofAll then
         local args = {...}
         if args[4] == "Running" then
+          --[[
+               Reason its left running and not spoofed because 
+               if u spoof runing and then run it will cause anti tp drag backs and potential ban.
+            ]]
         else
             args[4] = "Climbing"
         end
@@ -116,7 +120,7 @@ local Window = Fluent:CreateWindow({
     Theme = "Dark"
 })
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "monitor-stop" }),
+    Main = Window:AddTab({ Title = "Main", Icon = "view" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
