@@ -1,0 +1,182 @@
+warn("-------------------------------")
+local framework = require(game:GetService("ReplicatedFirst").Framework)  
+local modules = {
+    ["steppers"] = framework.require("Classes", "Steppers"),
+    ["interface"] = framework.require("Libraries", "Interface"),
+    ["keybinds"] = framework.require("Libraries", "Keybinds"),
+    ["raycasting"] = framework.require("Libraries", "Raycasting"),
+    ["stepped_springs"] = framework.require("Classes", "SteppedSprings"),
+    ["maids"] = framework.require("Classes", "Maids"),
+    ["springs"] = framework.require("Classes", "Springs"),
+    ["old_springs"] = framework.require("Classes", "OldSprings"),
+    ["signals"] = framework.require("Classes", "Signals"),
+    ["resources"] = framework.require("Libraries", "Resources"),
+    ["characters_require"] = framework.require("Classes", "Characters"),
+    ["lighting_require"] = framework.require("Libraries", "Lighting"),
+    ["camera"] = framework.require("Libraries", "Cameras"),
+    ["world"] = framework.require("Libraries", "World"),
+    ["gun_builder"] = framework.require("Libraries", "GunBuilder"),
+    ["network"] = framework.require("Libraries", "Network"),
+    ["item_data"] = framework.require("Configs", "ItemData"),
+    ["bullets"] = framework.require("Libraries", "Bullets"),
+    ["players_require"] = framework.require("Classes", "Players")
+}
+--[[module table is taken from ars.red v3 source leak so credits to them!]]
+
+getgenv().networkspy = false
+getgenv().networkaddspy = false
+getgenv().networkFetchspy = false
+getgenv().SpoofAll = false
+local networksendspy; 
+networksendspy= hookfunction(modules.network.Send, function(self,eventname,...)
+	local args = {...}
+	if typeof(args) == "table" and getgenv().networkspy then
+		warn("Eevent Name:", eventname,  table.unpack(args))
+		return networksendspy(self,eventname,unpack(args))
+	end
+	return networksendspy(self,eventname, ...)
+end)
+local networkFetchspy; 
+networkFetchspy = hookfunction(modules.network.Add, function(self,eventname,...)
+	local args = {...}
+	if typeof(args) == "table" and getgenv().networkFetchspy then
+		warn("Eevent Name:", eventname,  table.unpack(args))
+		return networkFetchspy(self,eventname,unpack(args))
+	else
+		warn("Eevent Name:", eventname,  args)
+		return networkFetchspy(self,eventname,unpack(args))
+	end
+	return networkFetchspy(self,eventname, ...)
+end)
+local networkAddspy; 
+networkAddspy= hookfunction(modules.network.Add, function(self,eventname,...)
+	local args = {...}
+	if typeof(args) == "table" and getgenv().networkaddspy then
+		warn("Eevent Name:", eventname,  table.unpack(args))
+		return networkAddspy(self,eventname,unpack(args))
+	else
+		warn("Eevent Name:", eventname,  args)
+		return networkAddspy(self,eventname,unpack(args))
+	end
+	return networkAddspy(self,eventname, ...)
+end)
+local networksendSpoof; 
+networksendSpoof = hookfunction(modules.network.Send, function(self,eventname,...)
+    local args = {...}
+    if typeof(args) == "number" and getgenv().SpoofAll then
+        args = {}
+        return networksendSpoof(self,eventname,unpack(args))
+    end
+    
+    if eventname == "Request Physics State Sync" and getgenv().SpoofAll then
+        local args = {...}
+        args[2] = 0
+        return networksendSpoof(self,eventname,unpack(args))
+    end
+    if eventname == "Character State Report" and getgenv().SpoofAll then
+        local args = {...}
+        if args[4] == "Running" then
+        else
+            args[4] = "Climbing"
+        end
+        if typeof(args[3]) == "Vector3" and getgenv().SpoofAll then
+            args[3] = Vector3.zero
+        end
+       return networksendSpoof(self,eventname,unpack(args))
+    end
+    if eventname == "Camera Report" and getgenv().SpoofAll then
+        local args = {...}
+        args[1] = CFrame.new(0,0,0)
+        return networksendSpoof(self,eventname,unpack(args))
+    end
+    if eventname == "Movestate Sync Request" then
+        local args = {...}
+        warn(args)
+    end
+    return networksendSpoof(self,eventname,...)
+end)
+local __newindex
+__newindex = hookmetamethod(game, "__newindex", function(t, k, v)
+    if (not checkcaller() and t:IsA("Humanoid") and (k == "JumpPower")) and getgenv().SpoofAll then
+        if k == "JumpPower" then
+         return 50
+        end
+    end
+    return __newindex(t, k, v)
+end)
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+local Window = Fluent:CreateWindow({
+    Title = "ARS.Network Debug" ,
+    SubTitle = "by awakenkn",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true, 
+    Theme = "Dark"
+})
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "monitor-stop" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+
+local Options = Fluent.Options
+do
+    Tabs.Main:AddParagraph({
+        Title = "Debug:",
+        Content = "hi your using ars debug press f9"
+    })
+    local networkspy = Tabs.Main:AddToggle("networkspy", {Title = "[Spy]: NetworkSend Args", Default = false })
+    networkspy:OnChanged(function(value)
+        getgenv().networkspy = value
+    end)
+    local networkaddspy = Tabs.Main:AddToggle("networkaddspy", {Title = "[Spy]: NetworkAdd Args", Default = false })
+    networkaddspy:OnChanged(function(value)
+        getgenv().networkaddspy = value
+    end)
+    local networkFetchspy = Tabs.Main:AddToggle("networkFetchspy", {Title = "[Spy]: NetworkFetch Args", Default = false })
+    networkFetchspy:OnChanged(function(value)
+        getgenv().networkFetchspy = value
+    end)
+    local SpoofAll = Tabs.Main:AddToggle("SpoofAll", {Title = "[NetWorkSendSpoof All]", Default = false })
+    SpoofAll:OnChanged(function(value)
+        getgenv().SpoofAll = value
+    end)
+    Tabs.Main:AddButton({
+        Title = "Nuke F9 CONSOLE",
+        Description = "clears f9 console",
+        Callback = function()
+            Window:Dialog({
+                Title = "Nuke F9 Console",
+                Content = "you sure you wana nuke f9 console.",
+                Buttons = {
+                    {
+                        Title = "Confirm",
+                        Callback = function()
+                            warn(("\n"):rep(20))
+                        end
+                    },
+                    {
+                        Title = "Cancel",
+                        Callback = function()
+                            return
+                        end
+                    }
+                }
+            })
+        end
+    })
+
+end
+SaveManager:SetLibrary(Fluent)InterfaceManager:SetLibrary(Fluent)SaveManager:IgnoreThemeSettings()SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("ARS.Network Debug")
+SaveManager:SetFolder("ARS.Network Debug")
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+Window:SelectTab(1)
+Fluent:Notify({
+    Title = "Fluent",
+    Content = "The script has been loaded.",
+    Duration = 8
+})
+SaveManager:LoadAutoloadConfig()
