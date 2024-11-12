@@ -2,7 +2,7 @@
 
 ## ⚡ Features
 
-- Spies on Network.send Module with also other network module function like network.Add and network.Fetch
+- Spies on Network.send function with also other network module function like network.Add and network.Fetch
 <br/>
 ## 🔌 Installation
 
