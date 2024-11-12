@@ -7,7 +7,7 @@
 ## 🔌 Installation
 
 ```lua
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Awakenchan/ARS2-Debug/refs/heads/main/Source"))() 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Awakenchan/ARS2-Debug/refs/heads/main/Source"))() 
 ```
 <br/>
 
